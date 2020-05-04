@@ -1,7 +1,24 @@
-var server = require('http').createServer();
+var started = false;
+var forceStop = function(){
+	started = false;
+	for(var i = 0; i < users.length; i++){
+		if(io.sockets.sockets.has(users[i].socketid)){
+			io.sockets.sockets[users[i].socketid].disconnect();
+		}
+	}
+}
+var server = require('http').createServer((req, res) => {
+	res.statusCode = 200;
+	res.setHeader('Content-Type', 'text/html');
+	if(started) res.end("A quiz is being played. <button type='button' onclick='forceStop()'>Stop Quiz</button>");
+	else  res.end('There is no quiz being played right now.');
+});
 var io = require('socket.io')(server);
 const fs = require('fs');
 const path = require('path');
+
+var hostname = '192.168.2.101';
+var port = 8080;
 
 const states = {
 	CHOOSING: "choosing",
@@ -522,6 +539,10 @@ io.sockets.on('connection', function(socket) {
     
   });
   
+  socket.on('dodisconnect', function(){
+	 socket.disconnect(); 
+  });
+  
   socket.on('disconnect', (reason) => {
     
     if(getUserByID(socket.id) == null) return;
@@ -581,4 +602,7 @@ io.sockets.on('connection', function(socket) {
 
 //deleteQuizzes();
 console.log('server started.');
-server.listen(3000);
+//server.listen(port);
+server.listen(port, hostname, () => {
+  console.log('Server running at http://'+hostname+':'+port+'/');
+});
